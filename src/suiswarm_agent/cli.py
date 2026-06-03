@@ -7,6 +7,8 @@ from rich.console import Console
 
 from suiswarm_agent.graph import graph
 
+SESSION_MESSAGE_LIMIT = 100
+
 app = typer.Typer(no_args_is_help=True)
 console = Console()
 
@@ -16,12 +18,20 @@ def main() -> None:
     """SuiSwarm Agent command line interface."""
 
 
+def trim_session_messages(messages: list[AnyMessage]) -> list[AnyMessage]:
+    """Keep the most recent messages for the active CLI chat session."""
+    return messages[-SESSION_MESSAGE_LIMIT:]
+
+
 def _run_turn(messages: list[AnyMessage], message: str) -> list[AnyMessage]:
     try:
-        result = graph.invoke({"messages": [*messages, HumanMessage(content=message)]})
+        session_messages = trim_session_messages(
+            [*messages, HumanMessage(content=message)]
+        )
+        result = graph.invoke({"messages": session_messages})
         final_message = result["messages"][-1]
         console.print(final_message.content)
-        return result["messages"]
+        return trim_session_messages(result["messages"])
     except OpenAIError as exc:
         console.print(f"[red]OpenAI error:[/red] {exc}")
     except Exception as exc:

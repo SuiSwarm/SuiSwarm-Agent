@@ -24,6 +24,8 @@ Interactive chat:
 suiswarm chat
 ```
 
+The interactive CLI keeps the latest 100 messages in memory for the active session.
+
 One-shot message:
 
 ```powershell
