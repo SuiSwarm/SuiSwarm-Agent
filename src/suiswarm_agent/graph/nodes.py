@@ -15,7 +15,10 @@ def _latest_user_request(state: AgentState) -> str:
 
 
 def plan_request(state: AgentState) -> dict:
-    model = build_chat_model(temperature=0).with_structured_output(PlanDecision)
+    model = build_chat_model(temperature=0).with_structured_output(
+        PlanDecision,
+        method="function_calling",
+    )
     tool_catalog = render_tool_catalog()
     user_request = _latest_user_request(state)
 
@@ -93,4 +96,3 @@ def respond(state: AgentState) -> dict:
     )
 
     return {"messages": [response], "final_response": str(response.content)}
-

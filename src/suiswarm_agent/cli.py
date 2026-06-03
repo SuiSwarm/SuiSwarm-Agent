@@ -1,5 +1,6 @@
 from typing import Annotated
 
+from openai import OpenAIError
 import typer
 from langchain_core.messages import AnyMessage, HumanMessage
 from rich.console import Console
@@ -16,10 +17,16 @@ def main() -> None:
 
 
 def _run_turn(messages: list[AnyMessage], message: str) -> list[AnyMessage]:
-    result = graph.invoke({"messages": [*messages, HumanMessage(content=message)]})
-    final_message = result["messages"][-1]
-    console.print(final_message.content)
-    return result["messages"]
+    try:
+        result = graph.invoke({"messages": [*messages, HumanMessage(content=message)]})
+        final_message = result["messages"][-1]
+        console.print(final_message.content)
+        return result["messages"]
+    except OpenAIError as exc:
+        console.print(f"[red]OpenAI error:[/red] {exc}")
+    except Exception as exc:
+        console.print(f"[red]Agent error:[/red] {exc}")
+    return messages
 
 
 @app.command()
