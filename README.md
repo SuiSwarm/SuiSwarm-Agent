@@ -15,6 +15,7 @@ Copy-Item .env.example .env
 Edit `.env` and set `OPENAI_API_KEY`.
 Set `TAVILY_API_KEY` to enable web search.
 Set `COINGECKO_DEMO_API_KEY` to enable live crypto market lookup.
+Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL` to enable tracing.
 
 ## Run the CLI
 
@@ -25,6 +26,11 @@ suiswarm chat
 ```
 
 The interactive CLI keeps the latest 100 messages in memory for the active session.
+When Langfuse is configured, CLI requests are traced with a generated session id.
+
+```powershell
+suiswarm chat --session-id dev-session-1 --user-id local-user
+```
 
 One-shot message:
 
