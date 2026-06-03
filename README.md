@@ -63,11 +63,25 @@ TAVILY_API_KEY=your_tavily_api_key_here
 
 ## Crypto Market Tool
 
-The agent uses CoinGecko Demo API for live crypto market data.
+The agent uses CoinGecko Demo API and GeckoTerminal endpoints for live crypto market data.
 Add your Demo key in `.env`:
 
 ```env
 COINGECKO_DEMO_API_KEY=your_coingecko_demo_api_key_here
+```
+
+Current crypto tool coverage:
+
+```text
+Coin search and ID resolution
+Live coin markets, details, top movers
+Historical market charts and OHLC candles
+Token lookup by contract address
+Global crypto and DeFi market stats
+Categories, exchanges, exchange tickers, BTC exchange rates
+NFT collection details
+GeckoTerminal networks, DEXes, on-chain token prices/info
+Trending/new pools and pool/token search
 ```
 
 ## LangGraph

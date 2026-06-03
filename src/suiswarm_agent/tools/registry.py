@@ -1,12 +1,12 @@
 from langchain_core.tools import BaseTool
 
 from suiswarm_agent.tools.builtin import describe_project, get_utc_time
-from suiswarm_agent.tools.coingecko import coingecko_search_coin_market
+from suiswarm_agent.tools.coingecko import COINGECKO_TOOLS
 from suiswarm_agent.tools.search import tavily_search
 
 
 TOOLS: list[BaseTool] = [
-    coingecko_search_coin_market,
+    *COINGECKO_TOOLS,
     tavily_search,
     get_utc_time,
     describe_project,

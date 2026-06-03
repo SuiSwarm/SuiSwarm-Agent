@@ -63,9 +63,12 @@ src/suiswarm_agent/schemas.py
 
 This keeps planning, execution, response generation, tool implementation, and data contracts separate.
 
-Currently registered tools include:
+Currently registered tool groups include:
 
-- `coingecko_search_coin_market`: live CoinGecko Demo API market lookup.
+- CoinGecko aggregated market tools: search, live markets, details, top movers,
+  charts, OHLC, contracts, global data, categories, exchanges, NFT details.
+- GeckoTerminal on-chain tools: networks, DEXes, token prices/info, token pools,
+  trending/new pools, pool search.
 - `tavily_search`: web search.
 - `get_utc_time`: UTC clock.
 - `describe_project`: project description.
