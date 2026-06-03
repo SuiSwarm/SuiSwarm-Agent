@@ -1,13 +1,17 @@
 from functools import lru_cache
 
 from dotenv import load_dotenv
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     openai_api_key: str
     openai_model: str = "gpt-4o-mini"
+    coingecko_demo_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("COINGECKO_DEMO_API_KEY", "COINGECKO_API_KEY"),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

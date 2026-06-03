@@ -14,6 +14,7 @@ Copy-Item .env.example .env
 
 Edit `.env` and set `OPENAI_API_KEY`.
 Set `TAVILY_API_KEY` to enable web search.
+Set `COINGECKO_DEMO_API_KEY` to enable live crypto market lookup.
 
 ## Run the CLI
 
@@ -58,6 +59,15 @@ Add your key in `.env`:
 
 ```env
 TAVILY_API_KEY=your_tavily_api_key_here
+```
+
+## Crypto Market Tool
+
+The agent uses CoinGecko Demo API for live crypto market data.
+Add your Demo key in `.env`:
+
+```env
+COINGECKO_DEMO_API_KEY=your_coingecko_demo_api_key_here
 ```
 
 ## LangGraph

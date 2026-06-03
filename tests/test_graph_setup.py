@@ -9,6 +9,7 @@ class GraphSetupTest(unittest.TestCase):
         self.assertIsNotNone(graph)
 
     def test_expected_tools_are_registered(self) -> None:
+        self.assertIn("coingecko_search_coin_market", TOOL_REGISTRY)
         self.assertIn("tavily_search", TOOL_REGISTRY)
         self.assertIn("get_utc_time", TOOL_REGISTRY)
         self.assertIn("describe_project", TOOL_REGISTRY)
@@ -16,4 +17,3 @@ class GraphSetupTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

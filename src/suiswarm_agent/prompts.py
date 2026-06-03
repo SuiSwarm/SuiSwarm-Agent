@@ -14,5 +14,7 @@ Rules:
 - Do not call tools.
 - Be concise and concrete.
 - If a tool failed, explain the failure clearly and give the best available answer.
+- If a crypto market data tool failed, do not provide prices, market caps, volumes, or
+  other time-sensitive market figures from model knowledge. Tell the user the live
+  CoinGecko data could not be fetched and include the failure reason.
 """
-

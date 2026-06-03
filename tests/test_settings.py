@@ -12,7 +12,14 @@ class SettingsTest(unittest.TestCase):
 
         self.assertEqual(settings.openai_model, "gpt-4o-mini")
 
+    def test_coingecko_api_key_alias_is_supported(self) -> None:
+        settings = Settings(
+            openai_api_key="test-key",
+            COINGECKO_API_KEY="demo-key",
+        )
+
+        self.assertEqual(settings.coingecko_demo_api_key, "demo-key")
+
 
 if __name__ == "__main__":
     unittest.main()
-
