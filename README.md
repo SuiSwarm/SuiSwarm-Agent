@@ -7,6 +7,7 @@ AI agent project scaffolded with LangGraph.
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 pip install -e .
 Copy-Item .env.example .env
 ```
@@ -15,6 +16,14 @@ Edit `.env` and set `OPENAI_API_KEY`.
 Set `TAVILY_API_KEY` to enable web search.
 
 ## Run the CLI
+
+Interactive chat:
+
+```powershell
+suiswarm chat
+```
+
+One-shot message:
 
 ```powershell
 suiswarm chat "Explain what SuiSwarm Agent can do"
