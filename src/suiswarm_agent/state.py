@@ -8,8 +8,6 @@ from typing_extensions import NotRequired, TypedDict
 class AgentState(TypedDict, total=False):
     messages: Annotated[list[AnyMessage], add_messages]
     plan: NotRequired[Any]
-    selected_tool: NotRequired[str | None]
-    tool_input: NotRequired[dict[str, Any]]
-    tool_result: NotRequired[Any]
+    tool_results: NotRequired[list[Any]]
     tool_error: NotRequired[str | None]
     final_response: NotRequired[str]

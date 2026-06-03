@@ -5,7 +5,7 @@ SuiSwarm Agent currently uses a simple, explicit LangGraph workflow:
 ```text
 START
   -> plan
-  -> execute_tool
+  -> execute_tools
   -> respond
   -> END
 ```
@@ -25,10 +25,10 @@ Receives the latest user request and chooses one of two actions:
 - `answer`: respond directly without a tool.
 - `use_tool`: select exactly one registered tool and provide JSON input.
 
-`execute_tool`
+`execute_tools`
 
-Looks up the selected tool from the registry and invokes it with the planner's input.
-Tool output or error is written back to graph state.
+Runs the planner's ordered tool steps from the registry. The current safety limit is
+5 tool calls per user request. Each tool output or error is written back to graph state.
 
 `respond`
 

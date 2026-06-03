@@ -7,6 +7,7 @@ from suiswarm_agent.state import AgentState
 from suiswarm_agent.tools.registry import TOOL_REGISTRY, render_tool_catalog
 
 CONVERSATION_CONTEXT_LIMIT = 100
+MAX_TOOL_STEPS = 5
 
 
 def _latest_user_request(state: AgentState) -> str:
@@ -35,66 +36,107 @@ def plan_request(state: AgentState) -> dict:
     )
     tool_catalog = render_tool_catalog()
     conversation = _format_conversation(state)
+    user_request = _latest_user_request(state)
 
     plan = model.invoke(
         [
             SystemMessage(
                 content=f"{PLANNER_SYSTEM_PROMPT}\n\nAvailable tools:\n{tool_catalog}"
             ),
-            HumanMessage(content=f"Conversation context:\n{conversation}"),
+            HumanMessage(
+                content=(
+                    f"Latest user request:\n{user_request}\n\n"
+                    f"Conversation context:\n{conversation}"
+                )
+            ),
         ]
     )
 
-    if plan.action == "use_tool" and plan.tool_name not in TOOL_REGISTRY:
+    valid_steps = []
+    invalid_tools = []
+    for step in plan.tool_steps[:MAX_TOOL_STEPS]:
+        if step.tool_name in TOOL_REGISTRY:
+            valid_steps.append(step)
+        else:
+            invalid_tools.append(step.tool_name)
+
+    if plan.action == "use_tools" and not valid_steps:
         plan = PlanDecision(
             action="answer",
             reasoning=(
-                f"Planner selected unknown tool '{plan.tool_name}', so responding "
-                "without a tool."
+                "Planner selected no valid registered tools, so responding without "
+                f"tools. Invalid tools: {invalid_tools}"
             ),
         )
+    elif plan.action == "use_tools":
+        plan.tool_steps = valid_steps
 
     return {
         "plan": plan,
-        "selected_tool": plan.tool_name,
-        "tool_input": plan.tool_input,
+        "tool_results": [],
         "tool_error": None,
     }
 
 
-def execute_tool(state: AgentState) -> dict:
-    tool_name = state.get("selected_tool")
-    tool_input = state.get("tool_input", {})
+def execute_tools(state: AgentState) -> dict:
+    plan = state.get("plan")
+    if not plan or plan.action != "use_tools":
+        return {"tool_results": [], "tool_error": None}
 
-    if not tool_name:
-        return {"tool_error": "No tool selected."}
+    results = []
+    errors = []
 
-    tool = TOOL_REGISTRY.get(tool_name)
-    if tool is None:
-        return {"tool_error": f"Unknown tool: {tool_name}"}
+    for index, step in enumerate(plan.tool_steps[:MAX_TOOL_STEPS], start=1):
+        tool = TOOL_REGISTRY.get(step.tool_name)
+        if tool is None:
+            error = f"Unknown tool: {step.tool_name}"
+            errors.append(error)
+            results.append(
+                ToolExecutionResult(
+                    step_index=index,
+                    tool_name=step.tool_name,
+                    reason=step.reason,
+                    input=step.tool_input,
+                    error=error,
+                )
+            )
+            continue
 
-    try:
-        output = tool.invoke(tool_input)
-        result = ToolExecutionResult(
-            tool_name=tool_name,
-            input=tool_input,
-            output=output,
-        )
-        return {"tool_result": result, "tool_error": None}
-    except Exception as exc:
-        result = ToolExecutionResult(
-            tool_name=tool_name,
-            input=tool_input,
-            error=str(exc),
-        )
-        return {"tool_result": result, "tool_error": str(exc)}
+        try:
+            output = tool.invoke(step.tool_input)
+            results.append(
+                ToolExecutionResult(
+                    step_index=index,
+                    tool_name=step.tool_name,
+                    reason=step.reason,
+                    input=step.tool_input,
+                    output=output,
+                )
+            )
+        except Exception as exc:
+            error = str(exc)
+            errors.append(error)
+            results.append(
+                ToolExecutionResult(
+                    step_index=index,
+                    tool_name=step.tool_name,
+                    reason=step.reason,
+                    input=step.tool_input,
+                    error=error,
+                )
+            )
+
+    return {
+        "tool_results": results,
+        "tool_error": "\n".join(errors) if errors else None,
+    }
 
 
 def respond(state: AgentState) -> dict:
     model = build_chat_model(temperature=0.2)
     conversation = _format_conversation(state)
     plan = state.get("plan")
-    tool_result = state.get("tool_result")
+    tool_results = state.get("tool_results", [])
 
     response = model.invoke(
         [
@@ -103,7 +145,7 @@ def respond(state: AgentState) -> dict:
                 content=(
                     f"Conversation context:\n{conversation}\n\n"
                     f"Planner decision:\n{plan}\n\n"
-                    f"Tool result:\n{tool_result}"
+                    f"Tool results:\n{tool_results}"
                 )
             ),
         ]

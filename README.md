@@ -93,9 +93,11 @@ The graph is exposed as `graph` in `src/suiswarm_agent/graph/builder.py` and con
 Current graph shape:
 
 ```text
-START -> plan -> execute_tool -> respond -> END
+START -> plan -> execute_tools -> respond -> END
               \-> respond -> END
 ```
+
+The planner can create up to 5 ordered tool calls for a single user request.
 
 ## Tests
 
