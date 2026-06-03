@@ -30,12 +30,17 @@ python -m suiswarm_agent.cli chat "What time is it?"
 
 ```text
 src/suiswarm_agent/
-  cli.py       # Command-line entry point
-  graph.py     # LangGraph graph definition
-  settings.py  # Environment-based configuration
-  state.py     # Shared graph state
-  tools.py     # Agent tools
+  cli.py          # Command-line entry point
+  graph/          # LangGraph builder and nodes
+  llm.py          # Chat model factory
+  prompts.py      # Planner and responder prompts
+  schemas.py      # Structured planner/tool schemas
+  settings.py     # Environment-based configuration
+  state.py        # Shared graph state
+  tools/          # Tool implementations and registry
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the planner, executor, and responder design.
 
 ## Search Tool
 
@@ -48,4 +53,17 @@ TAVILY_API_KEY=your_tavily_api_key_here
 
 ## LangGraph
 
-The graph is exposed as `graph` in `src/suiswarm_agent/graph.py` and configured in `langgraph.json`.
+The graph is exposed as `graph` in `src/suiswarm_agent/graph/builder.py` and configured in `langgraph.json`.
+
+Current graph shape:
+
+```text
+START -> plan -> execute_tool -> respond -> END
+              \-> respond -> END
+```
+
+## Tests
+
+```powershell
+python -m unittest discover
+```
