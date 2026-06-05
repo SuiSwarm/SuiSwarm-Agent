@@ -1,0 +1,16 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.suiswarm
+dist
+build
+*.egg-info
+.env
+docs
+tests
+.github

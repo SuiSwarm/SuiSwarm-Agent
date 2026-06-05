@@ -1,0 +1,21 @@
+# Local full-stack run: the API with SQLite-backed persistence (works out of the box).
+# For multi-user/hosted setups switch PERSISTENCE__BACKEND to postgres and add a db
+# service (requires installing a langgraph-checkpoint-postgres release compatible with
+# langgraph-checkpoint 4.x).
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      PERSISTENCE__BACKEND: sqlite
+      PERSISTENCE__SQLITE_PATH: /data/checkpoints.sqlite
+    volumes:
+      - suiswarm_data:/data
+    restart: unless-stopped
+
+volumes:
+  suiswarm_data:

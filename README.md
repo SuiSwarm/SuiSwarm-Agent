@@ -1,112 +1,94 @@
 # SuiSwarm Agent
 
-AI agent project scaffolded with LangGraph.
+**SuiSwarm Agent** là một "đàn" (swarm) AI agent lấy **Sui blockchain** làm trọng tâm, xây trên
+**LangGraph**. Một **supervisor** điều phối các **sub-agent** chuyên biệt, mỗi agent là một agent
+ReAct tự chain được tool của mình:
 
-## Setup
+- **market_agent** — dữ liệu thị trường crypto (CoinGecko / GeckoTerminal).
+- **research_agent** — tìm kiếm web (Tavily) cho tin tức/bối cảnh.
+- **sui_onchain_agent** — thao tác on-chain Sui qua một **service NestJS riêng** (bật khi cấu hình).
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install -e .
-Copy-Item .env.example .env
+> Mọi tương tác Sui (RPC, giữ key, ký tx) nằm ở service NestJS tách biệt; phía Python chỉ gọi
+> REST API của nó. Xem [docs/REFACTORING_PLAN.md](docs/REFACTORING_PLAN.md) để biết toàn bộ kiến
+> trúc và lộ trình.
+
+## Cài đặt
+
+```bash
+uv venv && . .venv/bin/activate      # Windows: .venv\Scripts\Activate.ps1
+uv pip install -e ".[dev]"           # hoặc: uv pip install -e .
+cp .env.example .env                 # rồi điền OPENAI_API_KEY
 ```
 
-Edit `.env` and set `OPENAI_API_KEY`.
-Set `TAVILY_API_KEY` to enable web search.
-Set `COINGECKO_DEMO_API_KEY` to enable live crypto market lookup.
-Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL` to enable tracing.
+Chỉ `OPENAI_API_KEY` là bắt buộc. Thêm `COINGECKO_DEMO_API_KEY` để bật market agent,
+`TAVILY_API_KEY` để bật research agent, `LANGFUSE_*` để bật tracing. Xem `.env.example`.
 
-## Run the CLI
+Kiểm tra cấu hình:
 
-Interactive chat:
-
-```powershell
-suiswarm chat
+```bash
+suiswarm config
 ```
 
-The interactive CLI keeps the latest 100 messages in memory for the active session.
-When Langfuse is configured, CLI requests are traced with a generated session id.
+## Dùng CLI
 
-```powershell
-suiswarm chat --session-id dev-session-1 --user-id local-user
+```bash
+suiswarm chat "Giá Bitcoin hiện tại là bao nhiêu USD?"     # one-shot (streaming)
+suiswarm chat                                              # chat tương tác
+suiswarm chat "..." --no-stream --session-id dev-1         # cờ tùy chọn
+python -m suiswarm_agent chat "What can you do?"           # chạy qua module
 ```
 
-One-shot message:
+Cờ hữu ích: `--session-id/--thread-id` (giữ ngữ cảnh hội thoại qua checkpointer),
+`--model`, `--temperature`, `--stream/--no-stream`, `--log-level`.
 
-```powershell
-suiswarm chat "Explain what SuiSwarm Agent can do"
+## Dùng REST API
+
+```bash
+uvicorn suiswarm_agent.interfaces.api.app:app --port 8000
 ```
 
-Or run the module directly:
+| Endpoint            | Mô tả                                  |
+| ------------------- | -------------------------------------- |
+| `POST /chat`        | Một lượt chat, trả JSON                |
+| `POST /chat/stream` | Streaming token qua SSE                |
+| `GET  /healthz`     | Health + danh sách capability đang bật |
 
-```powershell
-python -m suiswarm_agent.cli chat "What time is it?"
+```bash
+curl -s localhost:8000/chat -H 'content-type: application/json' \
+  -d '{"message":"Top 3 trending coins?"}'
 ```
 
-## Project Layout
+## Docker
+
+```bash
+docker compose up --build      # API + persistence SQLite, đọc .env
+```
+
+## Cấu trúc dự án
 
 ```text
 src/suiswarm_agent/
-  cli.py          # Command-line entry point
-  graph/          # LangGraph builder and nodes
-  llm.py          # Chat model factory
-  prompts.py      # Planner and responder prompts
-  schemas.py      # Structured planner/tool schemas
-  settings.py     # Environment-based configuration
-  state.py        # Shared graph state
-  tools/          # Tool implementations and registry
+  config/        # Settings có type, hợp nhất (env nested + alias quy ước)
+  core/          # constants, exceptions, logging
+  llm/           # factory chat-model đa provider
+  infra/         # http client (retry/rate-limit/cache), observability (langfuse)
+  memory/        # checkpointer LangGraph (memory/sqlite/postgres)
+  tools/         # client/service/tools theo domain: market/{coingecko,geckoterminal}, web, sui, system
+  agent/         # swarm: supervisor + agents/ + prompts
+  interfaces/    # cli/ (Typer, streaming) và api/ (FastAPI)
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the planner, executor, and responder design.
+## Phát triển
 
-## Search Tool
-
-The agent uses Tavily through the official `langchain-tavily` integration.
-Add your key in `.env`:
-
-```env
-TAVILY_API_KEY=your_tavily_api_key_here
+```bash
+make check     # ruff + mypy + pytest (đúng cổng CI)
+make test
+make serve     # uvicorn --reload
 ```
 
-## Crypto Market Tool
+CI chạy lint + type-check + test trên Python 3.11–3.13. Xem [CONTRIBUTING.md](CONTRIBUTING.md).
 
-The agent uses CoinGecko Demo API and GeckoTerminal endpoints for live crypto market data.
-Add your Demo key in `.env`:
+## Tài liệu
 
-```env
-COINGECKO_DEMO_API_KEY=your_coingecko_demo_api_key_here
-```
-
-Current crypto tool coverage:
-
-```text
-Coin search and ID resolution
-Live coin markets, details, top movers
-Historical market charts and OHLC candles
-Token lookup by contract address
-Global crypto and DeFi market stats
-Categories, exchanges, exchange tickers, BTC exchange rates
-NFT collection details
-GeckoTerminal networks, DEXes, on-chain token prices/info
-Trending/new pools and pool/token search
-```
-
-## LangGraph
-
-The graph is exposed as `graph` in `src/suiswarm_agent/graph/builder.py` and configured in `langgraph.json`.
-
-Current graph shape:
-
-```text
-START -> plan -> execute_tools -> respond -> END
-              \-> respond -> END
-```
-
-The planner can create up to 5 ordered tool calls for a single user request.
-
-## Tests
-
-```powershell
-python -m unittest discover
-```
+- [docs/REFACTORING_PLAN.md](docs/REFACTORING_PLAN.md) — kiến trúc đích, quyết định D1–D6, lộ trình 8 phase.
+- `docs/kien-truc/`, `docs/huong-dan/` — tổng quan, ADR, và hướng dẫn cấu hình / thêm tool / triển khai.
